@@ -5,156 +5,12 @@
 <title>For You 🤞🏼❤️</title>
 <link rel="icon" type="image/png" href="us.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  :root {
-    --accent: #e75480;
-    --bg: #fff0f5;
-  }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    min-height: 100vh;
-    margin: 0;
-    background: var(--bg);
-    color: var(--accent);
-    overflow: hidden;
-    position: relative;
-  }
-
-  /* --- Password Overlay --- */
-  #password-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: var(--bg);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-    text-align: center;
-    padding: 2rem;
-  }
-
-  #password-title {
-    font-size: 2.5rem;
-    margin-bottom: 2rem;
-    white-space: pre-wrap;
-    border-right: 4px solid var(--accent);
-    width: fit-content;
-    animation: blink 0.8s infinite;
-  }
-
-  @keyframes blink {
-    0%, 50% { border-color: var(--accent); }
-    51%, 100% { border-color: transparent; }
-  }
-
-  .password-hint {
-    margin-top: 0.8rem;
-    font-size: 1.3rem;
-    display: none;
-  }
-
-  #password-input {
-    padding: 1rem 2rem;
-    border: 3px solid var(--accent);
-    border-radius: 12px;
-    font-size: 1.5rem;
-    outline: none;
-    text-align: center;
-    margin-top: 1rem;
-  }
-
-  #password-input.shake {
-    animation: shake 0.3s;
-  }
-
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-12px); }
-    40%, 80% { transform: translateX(12px); }
-  }
-
-  /* --- Message Box + Content --- */
-  #main-content {
-    display: none;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 2rem;
-    position: relative;
-  }
-
-  .from-to {
-    font-size: 2rem;
-    margin-bottom: 2rem;
-    font-weight: 700;
-    position: relative;
-    z-index: 2;
-  }
-
-.message-box {
-  border: 4px solid var(--accent);   /* thinner border */
-  border-radius: 16px;              /* slightly smaller round corners */
-  background: transparent;
-  padding: 2rem 3rem;               /* smaller padding */
-  display: inline-block;
-  max-width: 85%;                   /* reduced width */
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-  will-change: transform, box-shadow;
-  position: relative;
-  cursor: pointer;
-  z-index: 2;
-}
-
-.message-box:hover {
-  box-shadow: 0 0 30px var(--accent);
-  transform: scale(1.04);
-}
-
-h1#message {
-  font-size: clamp(1.8rem, 5vw, 3rem);  /* slightly smaller text */
-  margin: 0;
-  line-height: 1.4;
-}
-
-
-  /* Hearts */
-  #hearts-container {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    overflow: hidden;
-    z-index: 5; /* hearts in front */
-  }
-
-  .heart {
-    position: absolute;
-    color: var(--accent);
-    pointer-events: none;
-    user-select: none;
-    animation: floatUp linear forwards;
-  }
-
-  @keyframes floatUp {
-    0% {
-      transform: translateY(0) scale(1);
-    }
-    100% {
-      transform: translateY(-100vh) scale(0.5);
-      opacity: 0;
-    }
-  }
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-  <!-- Password Screen -->
+  <!-- PASSWORD SCREEN -->
   <div id="password-overlay">
     <h2 id="password-title"></h2>
     <input id="password-input" type="password" placeholder="Enter password">
@@ -163,136 +19,110 @@ h1#message {
     <p id="hint3" class="password-hint"><em>hint: Tab Se7s Be7eb Meen?</em></p>
   </div>
 
-  <!-- Main Content -->
+  <!-- MAIN CONTENT -->
   <div id="main-content">
-    <div class="from-to">From Hussein to Jannah 🤞🏼❤️</div>
-    <div class="message-box">
-      <h1 id="message"></h1>
+    <!-- NAVIGATION MENU -->
+    <div class="nav-menu" id="nav-menu">
+      <div class="hamburger" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="nav-dropdown" id="nav-dropdown">
+        <div class="nav-item" id="nav-message">Love Message</div>
+        <div class="nav-item" id="nav-album">Our Memories</div>
+        <div class="nav-item" id="nav-hangman">Guess the Word</div>
+      </div>
     </div>
+    
+    <div class="countdown" id="countdown">
+      <svg viewBox="-50 -50 100 100" stroke-width="10">
+        <circle r="40"></circle>
+        <circle r="40" pathLength="1"></circle>
+      </svg>
+    </div>
+    <div class="from-to">From Hussein to Jannah 🤞🏼❤️</div>
+    <div class="message-box"><h1 id="message"></h1></div>
+    <button id="click-btn">Click Me</button>
     <div id="hearts-container"></div>
   </div>
 
-<script>
-  // --- Typing Effect for Title ---
-  const titleText = "Hi Jojy, Please Enter Password";
-  const titleElement = document.getElementById("password-title");
-  let charIndex = 0;
+  <!-- ALBUM PAGE -->
+  <div id="album-page">
+    <!-- NAVIGATION MENU -->
+    <div class="nav-menu" id="nav-menu-album">
+      <div class="hamburger" id="hamburger-album">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="nav-dropdown" id="nav-dropdown-album">
+        <div class="nav-item" id="nav-message-album">Message Page</div>
+        <div class="nav-item" id="nav-album-album">Photo Album</div>
+        <div class="nav-item" id="nav-hangman-album">Guess the Word</div>
+      </div>
+    </div>
+    
+    <h1 id="album-message">I love you so much my World, the girl I want to spend the next forever with ❤️<br>أحبك</h1>
+    <div class="album-container">
+      <button class="scroll-indicator scroll-left" id="scroll-left">‹</button>
+      <div id="album">
+        <img src="1.jpg" alt="1">
+        <img src="2.jpg" alt="2">
+        <img src="3.JPG" alt="3">
+        <img src="6.jpg" alt="6">
+        <img src="4.JPG" alt="4">
+        <img src="5.JPG" alt="5">
+        <img src="1.jpg" alt="1">
+        <img src="2.jpg" alt="2">
+        <img src="3.JPG" alt="3">
+        <img src="6.jpg" alt="6">
+        <img src="4.JPG" alt="4">
+        <img src="5.JPG" alt="5">
+      </div>
+      <button class="scroll-indicator scroll-right" id="scroll-right">›</button>
+    </div>
+    <!-- Rotating messages under images -->
+    <div id="album-rotating-message"></div>
+  </div>
 
-  function typeWriter() {
-    if (charIndex < titleText.length) {
-      titleElement.textContent += titleText.charAt(charIndex);
-      charIndex++;
-      setTimeout(typeWriter, 150);
-    }
-  }
-  window.onload = typeWriter;
+  <!-- FULLSCREEN IMAGE -->
+  <div id="fullscreen">
+    <img src="" alt="Fullscreen">
+  </div>
 
-  // --- Password Logic ---
-  const overlay = document.getElementById("password-overlay");
-  const input = document.getElementById("password-input");
-  const mainContent = document.getElementById("main-content");
-  let failedAttempts = 0;
+  <!-- HANGMAN GAME -->
+  <div id="hangman-page">
+    <!-- NAVIGATION MENU -->
+    <div class="nav-menu" id="nav-menu-hangman">
+      <div class="hamburger" id="hamburger-hangman">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="nav-dropdown" id="nav-dropdown-hangman">
+        <div class="nav-item" id="nav-message-hangman">Love Message</div>
+        <div class="nav-item" id="nav-album-hangman">Our Memories</div>
+        <div class="nav-item" id="nav-hangman-hangman">Guess the Word</div>
+      </div>
+    </div>
+    
+    <h1 id="hangman-title">Guess the Word ❤️</h1>
+    <div id="hangman-game">
+      <div id="word-display"></div>
+      <div id="incorrect-letters-container">
+        <h3>Incorrect Letters:</h3>
+        <div id="incorrect-letters"></div>
+      </div>
+      <div id="game-status"></div>
+      <div id="letter-input-container">
+        <input type="text" id="letter-input" maxlength="1" placeholder="Enter a letter">
+        <button id="guess-btn">Guess</button>
+      </div>
+      <button id="new-game-btn">New Game</button>
+    </div>
+  </div>
 
-  input.addEventListener("keypress", function(e) {
-    if (e.key === "Enter") {
-      if (input.value === "Jannah") {
-        overlay.style.display = "none";
-        mainContent.style.display = "flex";
-        startPage();
-      } else {
-        failedAttempts++;
-        input.classList.add("shake");
-        setTimeout(() => input.classList.remove("shake"), 300);
-        input.value = "";
-
-        if (failedAttempts === 1) {
-          document.getElementById("hint1").style.display = "block";
-        } else if (failedAttempts === 2) {
-          document.getElementById("hint2").style.display = "block";
-        } else if (failedAttempts === 3) {
-          document.getElementById("hint3").style.display = "block";
-        }
-      }
-    }
-  });
-
-  // --- Message Logic ---
-  let messages = [];
-  let currentIndex = 0;
-
-  function startPage() {
-    const morningMessages = [
-      "Good morning my love ❤️",
-      "Saba7 el gamal Jojy",
-      "Saba7 el 3asal Jojy",
-      "Saba7 el 5eir ya Jojy",
-      "3omry w 7ayati, w albi kolo. Saba7 el ward",
-      "Good Morning Battaa 🦆",
-      "Saba7 el gamal Jojy",
-    ];
-
-    const nightMessages = [
-      "Goodnight, my love ❤️",
-      "Sweet dreams, Jojy ❤️",
-      "Tesba7y 3ala alf 5eir, Ba7ebek ❤️",
-      "Sleep well, Jannahhhh 🤞🏼❤️"
-    ];
-
-    const dayMessages = [
-      "Hope your day is going amazing Battaa 🦆",
-      "Thinking of you right now 😁",
-      "7ayati w albi, I miss you 🤞🏼❤️"
-    ];
-
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) {
-      messages = morningMessages;
-    } else if (hour >= 18 || hour < 5) {
-      messages = nightMessages;
-    } else {
-      messages = dayMessages;
-    }
-
-    // start with a random message
-    currentIndex = Math.floor(Math.random() * messages.length);
-    document.getElementById("message").innerText = messages[currentIndex];
-
-    // clicking cycles through messages
-    document.querySelector(".message-box").addEventListener("click", () => {
-      currentIndex = (currentIndex + 1) % messages.length;
-      document.getElementById("message").innerText = messages[currentIndex];
-    });
-
-    // Hearts generator: a few every second
-    setInterval(() => {
-      for (let i = 0; i < 3; i++) {
-        createHeart();
-      }
-    }, 1000);
-  }
-
-  function createHeart() {
-    const heart = document.createElement('div');
-    heart.className = 'heart';
-    heart.innerText = '❤️';
-
-    heart.style.left = Math.random() * 100 + 'vw';
-    heart.style.top = '100vh';
-
-    const isForeground = Math.random() < 0.6; // 60% chance to be in front
-    const size = Math.random() * 1.5 + 1.2;
-    heart.style.fontSize = size + 'rem';
-
-    // Foreground vs background opacity
-    heart.style.opacity = isForeground ? 0.9 : 0.4;
-
-    heart.style.animationDuration = (Math.random() * 5 + 4) + 's';
-    heart.style.zIndex = 9999;
-
-    document.getElementById("hearts-container").appendChild(heart);
-
-    setTimeout(() => heart.remove(), parseFloat(heart.style.animationDuration) * 1000);
-  }
-</script>
+<script src="script.js"></script>
 </body>
 </html>
