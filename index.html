@@ -29,10 +29,9 @@
         <span></span>
       </div>
       <div class="nav-dropdown" id="nav-dropdown">
-        <div class="nav-item" id="nav-message">Love Message</div>
+        <div class="nav-item" id="nav-message">Our Days</div>
         <div class="nav-item" id="nav-album">Our Memories</div>
-        <div class="nav-item" id="nav-days">Our Days</div>
-        <div class="nav-item" id="nav-hangman">Guess the Word</div>
+        <div class="nav-item" id="nav-letter">A Letter to You</div>
       </div>
     </div>
     
@@ -58,10 +57,9 @@
         <span></span>
       </div>
       <div class="nav-dropdown" id="nav-dropdown-album">
-        <div class="nav-item" id="nav-message-album">Message Page</div>
+        <div class="nav-item" id="nav-message-album">Our Days</div>
         <div class="nav-item" id="nav-album-album">Photo Album</div>
-        <div class="nav-item" id="nav-days-album">Our Days</div>
-        <div class="nav-item" id="nav-hangman-album">Guess the Word</div>
+        <div class="nav-item" id="nav-letter-album">A Letter to You</div>
       </div>
     </div>
     
@@ -93,39 +91,6 @@
     <img src="" alt="Fullscreen">
   </div>
 
-  <!-- HANGMAN GAME -->
-  <div id="hangman-page">
-    <!-- NAVIGATION MENU -->
-    <div class="nav-menu" id="nav-menu-hangman">
-      <div class="hamburger" id="hamburger-hangman">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-      <div class="nav-dropdown" id="nav-dropdown-hangman">
-        <div class="nav-item" id="nav-message-hangman">Love Message</div>
-        <div class="nav-item" id="nav-album-hangman">Our Memories</div>
-        <div class="nav-item" id="nav-days-hangman">Our Days</div>
-        <div class="nav-item" id="nav-hangman-hangman">Guess the Word</div>
-      </div>
-    </div>
-    
-    <h1 id="hangman-title">Guess the Word ❤️</h1>
-    <div id="hangman-game">
-      <div id="word-display"></div>
-      <div id="incorrect-letters-container">
-        <h3>Incorrect Letters:</h3>
-        <div id="incorrect-letters"></div>
-      </div>
-      <div id="game-status"></div>
-      <div id="letter-input-container">
-        <input type="text" id="letter-input" maxlength="1" placeholder="Enter a letter">
-        <button id="guess-btn">Guess</button>
-      </div>
-      <button id="new-game-btn">New Game</button>
-    </div>
-  </div>
-
   <!-- DAYS TOGETHER PAGE -->
   <div id="together-page">
     <!-- NAVIGATION MENU -->
@@ -136,36 +101,98 @@
         <span></span>
       </div>
       <div class="nav-dropdown" id="nav-dropdown-days">
-        <div class="nav-item" id="nav-message-days">Love Messages</div>
+        <div class="nav-item" id="nav-message-days">Our Days</div>
         <div class="nav-item" id="nav-album-days">Our Memories</div>
-        <div class="nav-item" id="nav-days-days">Our Journey</div>
-        <div class="nav-item" id="nav-hangman-days">HangMan Game</div>
+        <div class="nav-item" id="nav-letter-days">A Letter to You</div>
       </div>
     </div>
 
     <div class="together-content">
-      <h1>Our Journey Together🤞🏼❤️</h1>
-      <p class="together-subtitle">We've been side by side for</p>
-      <div class="together-counters">
-        <div class="counter-card">
-          <span id="days-count" class="counter-number">—</span>
-          <span class="counter-label">days</span>
-        </div>
-        <div class="counter-card">
-          <span id="years-months-count" class="counter-number counter-number--breakdown">
-            <span class="breakdown-line breakdown-line--single">Loading…</span>
-          </span>
-          <span class="counter-label">and counting</span>
-        </div>
-        <div class="counter-card">
-          <span id="weeks-count" class="counter-number">—</span>
-          <span class="counter-label">weeks together</span>
-        </div>
+      <div id="years-display" class="years-display">
+        <div class="years-number">2</div>
+        <div class="years-label">Years</div>
       </div>
-      <p class="together-note">
-        That's <strong id="hours-count">—</strong> hours of love, laughter, and memories that I wouldn't trade for anything.
-      </p>
+      <div id="together-details" class="together-details" style="display: none;">
+        <h1>Our Journey Together🤞🏼❤️</h1>
+        <p class="together-subtitle">We've been side by side for</p>
+        <div class="together-counters">
+          <div class="counter-card">
+            <span id="days-count" class="counter-number">—</span>
+            <span class="counter-label">days</span>
+          </div>
+          <div class="counter-card">
+            <span id="years-months-count" class="counter-number counter-number--breakdown">
+              <span class="breakdown-line breakdown-line--single">Loading…</span>
+            </span>
+            <span class="counter-label">and counting</span>
+          </div>
+          <div class="counter-card">
+            <span id="weeks-count" class="counter-number">—</span>
+            <span class="counter-label">weeks together</span>
+          </div>
+        </div>
+        <p class="together-note">
+          That's <strong id="hours-count">—</strong> hours of love, laughter, and memories that I wouldn't trade for anything.
+        </p>
+      </div>
     </div>
+
+    <button id="days-next-btn" class="next-button" type="button" aria-label="Go to the letter">
+      Next: A Letter to You
+    </button>
+  </div>
+
+  <!-- ANNIVERSARY LETTER PAGE -->
+  <div id="letter-page">
+    <!-- NAVIGATION MENU -->
+    <div class="nav-menu" id="nav-menu-letter">
+      <div class="hamburger" id="hamburger-letter">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="nav-dropdown" id="nav-dropdown-letter">
+        <div class="nav-item" id="nav-message-letter">Our Days</div>
+        <div class="nav-item" id="nav-album-letter">Our Memories</div>
+        <div class="nav-item" id="nav-letter-letter">A Letter to You</div>
+      </div>
+    </div>
+
+    <div class="letter-container">
+      <h1 class="letter-title" id="letter-title"></h1>
+      
+      <div class="letter-content" id="letter-content" style="display: none;">
+        <p>
+          It's been <span id="letter-hours">17,566</span> hours of love, laughter, and memories that I wouldn't trade for anything. That's crazy when you think about it. We've had our downs, but honestly, We've had way more highs. We've been through a lot together and we always push through.
+        </p>
+
+        <p>
+          This past year was pretty amazing. From watching our first movie in the cinema, The Gladiator. And Fork and Spoon the sushi place we found and now it's our favorite spot. We went to our first basketball game, our first Cairokee concert. We tried skiing together and got those matching Stanleys. Little things like that, but they mean everything to me.
+        </p>
+
+        <p>
+          I love you so much Jannah. Like, so much it's crazy.
+        </p>
+
+        <p>
+          But I need to be honest with you. When you called me that name... I never expected that from you. I never thought you'd talk to me like that. It hurt. Like, a different kind of hurt that I didn't even know existed. This isn't me being egoful or anything it's just that it really hurt coming from you.
+        </p>
+
+        <p>
+          I know we'll get through this. I believe in us and everything we've built. But we just need some time. we need time to reflect and heal. We just need this break to figure out what we want and what we need. So we can return stronger and better than before, Bas begad this time.
+        </p>
+
+        <p class="letter-ending">
+          Happy 2 years Jannah. These have been the best 2 years of my life. To many more years and years to come inshallah🤞🏼❤️
+        </p>
+
+        <p class="letter-name">- Hussein</p>
+      </div>
+    </div>
+
+    <button id="letter-next-btn" class="next-button" type="button" aria-label="Go to our memories">
+      Next 
+    </button>
   </div>
 
 <script src="script.js"></script>

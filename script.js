@@ -29,6 +29,8 @@ const ALBUM_MESSAGE_ROTATION_MS = 3000; // Delay between album caption changes
 const CLICK_BUTTON_DELAY_MS = 10000; // Matches the visual countdown animation
 const COUNTDOWN_DURATION_SECONDS = 10; // Mirrors CSS custom property --t
 const PASSWORD_HINT_IDS = ["hint1", "hint2", "hint3"]; // DOM ids for the progressive hints
+const ANNIVERSARY_START = new Date(2025, 10, 16); // Nov 16, 2025 (month is zero-based)
+const ANNIVERSARY_END = new Date(2025, 11, 16); // Dec 16, 2025
 
 // Rotating affirmations shared across pages.
 const LOVE_MESSAGES = [
@@ -39,14 +41,13 @@ const LOVE_MESSAGES = [
   "You are my forever love 🤞🏼❤️"
 ];
 
-// All secret phrases that can appear in the hangman game.
-const HANGMAN_WORD = "I'll love you until forever";
 
 /* =========================================================
    GLOBAL STATE
 ========================================================= */
 const STATE = {
   typewriterIndex: 0, // Tracks current character position for the typewriter animation
+  letterTypewriterIndex: 0, // Tracks current character position for the letter title typewriter
   failedPasswordAttempts: 0, // Number of incorrect password tries (to reveal hints)
   heartIntervalId: null, // Stores the interval that continually spawns hearts
   mainMessageIntervalId: null, // Interval handle for rotating the message on the first page
@@ -57,14 +58,8 @@ const STATE = {
   clickButtonTimeoutId: null, // Timeout that reveals the “Click Me” button after the countdown
   togetherIntervalId: null, // Interval that keeps the days-together counters in sync with real time
   mainInitialised: false, // Guards the main-page initialisation work so it only runs once
-  hangman: {
-    word: normaliseHangmanWord(HANGMAN_WORD), // Always the lowercase, punctuation-free target used internally
-    guessedLetters: new Set(), // Letters the player has already attempted
-    incorrectLetters: new Set(), // Incorrect guesses displayed under the puzzle
-    maxIncorrect: 6, // Maximum number of mistakes allowed
-    gameOver: false, // Flag controlling interactivity of the controls
-    won: false // Tracks if the player has successfully finished the round
-  }
+  confettiIntervalId: null, // Interval for anniversary confetti
+  daysNextButtonTimeoutId: null // Timeout to reveal the days page next button
 };
 
 /* =========================================================
@@ -78,12 +73,12 @@ const els = {
     input: document.getElementById("password-input")
   },
 
-  // Containers for each “page” of the experience
+  // Containers for each "page" of the experience
   pages: {
     main: document.getElementById("main-content"),
     album: document.getElementById("album-page"),
-    hangman: document.getElementById("hangman-page"),
-    days: document.getElementById("together-page")
+    days: document.getElementById("together-page"),
+    letter: document.getElementById("letter-page")
   },
 
   // Elements specific to the landing page
@@ -109,10 +104,19 @@ const els = {
 
   // Together counter page
   days: {
+    yearsDisplay: document.getElementById("years-display"),
+    togetherDetails: document.getElementById("together-details"),
     daysCount: document.getElementById("days-count"),
     weeksCount: document.getElementById("weeks-count"),
     hoursCount: document.getElementById("hours-count"),
-    breakdown: document.getElementById("years-months-count")
+    breakdown: document.getElementById("years-months-count"),
+    nextButton: document.getElementById("days-next-btn")
+  },
+
+  // Letter page
+  letter: {
+    page: document.getElementById("letter-page"),
+    nextButton: document.getElementById("letter-next-btn")
   },
 
   // Navigation menus and dropdowns (one set per page)
@@ -126,11 +130,6 @@ const els = {
       trigger: document.getElementById("nav-menu-album"),
       hamburger: document.getElementById("hamburger-album"),
       dropdown: document.getElementById("nav-dropdown-album")
-    },
-    {
-      trigger: document.getElementById("nav-menu-hangman"),
-      hamburger: document.getElementById("hamburger-hangman"),
-      dropdown: document.getElementById("nav-dropdown-hangman")
     },
     {
       trigger: document.getElementById("nav-menu-days"),
@@ -167,24 +166,20 @@ const PAGES = {
       }
     }
   },
-  hangman: {
-    show: () => {
-      if (els.pages.hangman) {
-        els.pages.hangman.style.setProperty("display", "flex", "important");
-      }
-    },
-    hide: () => {
-      if (els.pages.hangman) {
-        els.pages.hangman.style.setProperty("display", "none", "important");
-      }
-    }
-  },
   days: {
     show: () => {
       if (els.pages.days) els.pages.days.style.display = "flex";
     },
     hide: () => {
       if (els.pages.days) els.pages.days.style.display = "none";
+    }
+  },
+  letter: {
+    show: () => {
+      if (els.pages.letter) els.pages.letter.style.display = "flex";
+    },
+    hide: () => {
+      if (els.pages.letter) els.pages.letter.style.display = "none";
     }
   }
 };
@@ -203,6 +198,8 @@ function initializeApp() {
   setupMainPageInteractions();
   setupAlbumInteractions();
   setupFullscreenViewer();
+  setupDaysPageInteractions();
+  setupLetterPageInteractions();
   setupNavigation();
   startTogetherCounter(); // Begin tracking how long you've been together
 }
@@ -252,8 +249,7 @@ function unlockExperience() {
     els.password.overlay.style.display = "none";
   }
 
-  goToPage("main");
-  startMainExperience();
+  goToPage("days");
 }
 
 // Provides feedback for wrong guesses, including the shake animation and progressive hints.
@@ -284,13 +280,9 @@ function revealNextPasswordHint() {
    MAIN PAGE SETUP
 ========================================================= */
 function setupMainPageInteractions() {
-  if (els.main.messageBox) {
-    els.main.messageBox.addEventListener("click", advanceMainMessageManually);
-  }
-
   if (els.main.clickButton) {
     els.main.clickButton.addEventListener("click", () => {
-      goToPage("album");
+      goToPage("days");
     });
   }
 }
@@ -302,9 +294,11 @@ function startMainExperience() {
 
   prepareMainMessages();
   showRandomMainMessage();
-  startMainMessageRotation();
   startHeartSpawner();
-  synchroniseCountdownWithButton();
+  // Show the action button immediately (no countdown)
+  if (els.main.clickButton) {
+    els.main.clickButton.style.display = "inline-block";
+  }
 }
 
 // Chooses the appropriate pool of messages based on the current time.
@@ -450,26 +444,22 @@ function setupMenuToggles() {
   });
 }
 
-// Connects every nav item to the destination page it should expose.
-function setupNavigationLinks() {
-  const linkMap = [
-    { id: "nav-message", page: "main" },
-    { id: "nav-album", page: "album" },
-    { id: "nav-days", page: "days" },
-    { id: "nav-hangman", page: "hangman" },
-    { id: "nav-message-album", page: "main" },
-    { id: "nav-album-album", page: "album" },
-    { id: "nav-days-album", page: "days" },
-    { id: "nav-hangman-album", page: "hangman" },
-    { id: "nav-message-hangman", page: "main" },
-    { id: "nav-album-hangman", page: "album" },
-    { id: "nav-days-hangman", page: "days" },
-    { id: "nav-hangman-hangman", page: "hangman" },
-    { id: "nav-message-days", page: "main" },
-    { id: "nav-album-days", page: "album" },
-    { id: "nav-days-days", page: "days" },
-    { id: "nav-hangman-days", page: "hangman" }
-  ];
+  // Connects every nav item to the destination page it should expose.
+  function setupNavigationLinks() {
+    const linkMap = [
+      { id: "nav-message", page: "days" },
+      { id: "nav-album", page: "album" },
+      { id: "nav-letter", page: "letter" },
+      { id: "nav-message-album", page: "days" },
+      { id: "nav-album-album", page: "album" },
+      { id: "nav-letter-album", page: "letter" },
+      { id: "nav-message-days", page: "days" },
+      { id: "nav-album-days", page: "album" },
+      { id: "nav-letter-days", page: "letter" },
+      { id: "nav-message-letter", page: "days" },
+      { id: "nav-album-letter", page: "album" },
+      { id: "nav-letter-letter", page: "letter" }
+    ];
 
   linkMap.forEach((link) => {
     const element = document.getElementById(link.id);
@@ -526,18 +516,26 @@ function goToPage(pageKey) {
   });
 
   // Handle page-specific side-effects.
-  if (pageKey === "album") {
-    startAlbumMessageRotation();
-  } else {
+  if (pageKey !== "album") {
     stopAlbumMessageRotation();
   }
 
-  if (pageKey === "hangman") {
-    initializeHangmanGame();
+  if (pageKey === "days") {
+    showYearsFirst(); // Show "2 Years" first, then details
+    startAnniversaryConfetti();
+    scheduleDaysNextButton();
+  } else {
+    stopAnniversaryConfetti();
+    hideDaysNextButton();
   }
 
-  if (pageKey === "days") {
-    updateTogetherPage(); // Refresh immediately when visiting the days page
+  if (pageKey === "letter") {
+    resetLetterNextButton();
+    if (els.letter.page) {
+      els.letter.page.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    startLetterTypewriter(); // Start typing "Jannah,"
+    updateLetterHours(); // Update the hours count in the letter
   }
 }
 
@@ -548,6 +546,11 @@ function setupAlbumInteractions() {
   setupAlbumScrollButtons();
   setupAlbumImageHoverEffects();
   setupAlbumKeyboardAccessibility();
+
+  // Keep album caption static (no rotation)
+  if (els.album.message) {
+    els.album.message.textContent = LOVE_MESSAGES[0];
+  }
 }
 
 // Allows the user to nudge the album left/right using the buttons.
@@ -673,186 +676,6 @@ function openFullscreenImage(src) {
 }
 
 /* =========================================================
-   HANGMAN GAME LOGIC
-========================================================= */
-function initializeHangmanGame() {
-  const wordDisplay = document.getElementById("word-display");
-  const incorrectLettersContainer = document.getElementById("incorrect-letters");
-  const gameStatus = document.getElementById("game-status");
-  const letterInput = document.getElementById("letter-input");
-  const guessBtn = document.getElementById("guess-btn");
-  const newGameBtn = document.getElementById("new-game-btn");
-
-  if (!wordDisplay || !incorrectLettersContainer || !gameStatus || !letterInput || !guessBtn || !newGameBtn) {
-    return;
-  }
-
-  resetHangmanState();
-  renderHangmanWord();
-  updateIncorrectLetters();
-  updateGameStatus();
-  configureHangmanControls(letterInput, guessBtn, newGameBtn);
-}
-
-// Normalises the displayed word back to its initial state.
-function resetHangmanState() {
-  STATE.hangman = {
-    word: normaliseHangmanWord(HANGMAN_WORD),
-    guessedLetters: new Set(),
-    incorrectLetters: new Set(),
-    maxIncorrect: 6,
-    gameOver: false,
-    won: false
-  };
-}
-
-// Displays the word with underscores while preserving spaces and apostrophes.
-function renderHangmanWord() {
-  const wordDisplay = document.getElementById("word-display");
-  if (!wordDisplay) return;
-
-  wordDisplay.innerHTML = "";
-  const originalChars = Array.from(HANGMAN_WORD);
-
-  originalChars.forEach((char) => {
-    const letterSpace = document.createElement("div");
-    letterSpace.className = "letter-space";
-
-    if (char === " ") {
-      letterSpace.innerHTML = "&nbsp;";
-      letterSpace.style.border = "none";
-      letterSpace.style.width = "1rem";
-    } else if (char === "'") {
-      letterSpace.textContent = "'";
-      letterSpace.style.border = "none";
-      letterSpace.style.width = "0.5rem";
-    } else if (STATE.hangman.guessedLetters.has(char.toLowerCase())) {
-      letterSpace.textContent = char;
-      letterSpace.classList.add("revealed");
-    }
-
-    wordDisplay.appendChild(letterSpace);
-  });
-}
-
-// Re-renders the incorrect letters list with delete animations.
-function updateIncorrectLetters() {
-  const incorrectLettersContainer = document.getElementById("incorrect-letters");
-  if (!incorrectLettersContainer) return;
-
-  incorrectLettersContainer.innerHTML = "";
-
-  STATE.hangman.incorrectLetters.forEach((letter) => {
-    const element = document.createElement("div");
-    element.className = "incorrect-letter";
-    element.textContent = letter.toUpperCase();
-    element.addEventListener("click", () => deleteIncorrectLetter(element, letter));
-    incorrectLettersContainer.appendChild(element);
-  });
-}
-
-// Handles the animation when removing an incorrect letter from the list.
-function deleteIncorrectLetter(element, letter) {
-  element.classList.add("deleting");
-  setTimeout(() => {
-    STATE.hangman.incorrectLetters.delete(letter);
-    updateIncorrectLetters();
-    updateGameStatus();
-  }, 600);
-}
-
-// Updates the status line (remaining guesses or win/lose messages).
-function updateGameStatus() {
-  const gameStatus = document.getElementById("game-status");
-  if (!gameStatus) return;
-
-  if (STATE.hangman.won) {
-    gameStatus.textContent = "Ba7ebek ya 3omry 🤞🏼❤️";
-    gameStatus.style.color = "#4CAF50";
-  } else if (STATE.hangman.gameOver) {
-    gameStatus.textContent = "Game Over! Try again!";
-    gameStatus.style.color = "#ff6b6b";
-  } else {
-    const remaining = STATE.hangman.maxIncorrect - STATE.hangman.incorrectLetters.size;
-    gameStatus.textContent = `Incorrect guesses remaining: ${remaining}`;
-    gameStatus.style.color = "var(--accent)";
-  }
-}
-
-// Binds click/keyboard events for the hangman controls.
-function configureHangmanControls(letterInput, guessBtn, newGameBtn) {
-  guessBtn.onclick = () => makeHangmanGuess(letterInput);
-  newGameBtn.onclick = initializeHangmanGame;
-  letterInput.value = "";
-  letterInput.focus();
-
-  letterInput.onkeypress = (event) => {
-    if (event.key === "Enter") {
-      makeHangmanGuess(letterInput);
-    }
-  };
-
-  letterInput.oninput = (event) => {
-    event.target.value = event.target.value.replace(/[^a-zA-Z]/g, "").toLowerCase();
-  };
-}
-
-// Processes a single letter guess from the player.
-function makeHangmanGuess(input) {
-  if (STATE.hangman.gameOver) return;
-
-  const letter = input.value.toLowerCase();
-
-  if (!letter || letter.length !== 1) {
-    input.style.borderColor = "#ff6b6b";
-    setTimeout(() => input.style.borderColor = "var(--accent)", 1000);
-    return;
-  }
-
-  if (STATE.hangman.guessedLetters.has(letter)) {
-    input.style.borderColor = "#ffa500";
-    setTimeout(() => input.style.borderColor = "var(--accent)", 1000);
-    return;
-  }
-
-  STATE.hangman.guessedLetters.add(letter);
-
-  if (STATE.hangman.word.includes(letter)) {
-    renderHangmanWord();
-    checkHangmanWin();
-  } else {
-    STATE.hangman.incorrectLetters.add(letter);
-    updateIncorrectLetters();
-    checkHangmanLoss();
-  }
-
-  updateGameStatus();
-  input.value = "";
-  input.focus();
-}
-
-// Checks if the player has successfully guessed the entire word.
-function checkHangmanWin() {
-  const allLettersGuessed = STATE.hangman.word.split("").every((letter) =>
-    STATE.hangman.guessedLetters.has(letter)
-  );
-
-  if (allLettersGuessed) {
-    STATE.hangman.won = true;
-    STATE.hangman.gameOver = true;
-    updateGameStatus();
-  }
-}
-
-// Ends the game if the player runs out of attempts.
-function checkHangmanLoss() {
-  if (STATE.hangman.incorrectLetters.size >= STATE.hangman.maxIncorrect) {
-    STATE.hangman.gameOver = true;
-    updateGameStatus();
-  }
-}
-
-/* =========================================================
    DAYS TOGETHER PAGE
 ========================================================= */
 function startTogetherCounter() {
@@ -865,9 +688,32 @@ function startTogetherCounter() {
   STATE.togetherIntervalId = setInterval(updateTogetherPage, TOGETHER_UPDATE_INTERVAL_MS);
 }
 
+// Shows "2 Years" prominently first, then reveals the detailed breakdown after a delay
+function showYearsFirst() {
+  if (!els.days.yearsDisplay || !els.days.togetherDetails) return;
+
+  // Show "2 Years" display
+  els.days.yearsDisplay.style.display = "flex";
+  els.days.togetherDetails.style.display = "none";
+
+  // After 3 seconds, hide "2 Years" and show detailed breakdown
+  setTimeout(() => {
+    if (els.days.yearsDisplay && els.days.togetherDetails) {
+      els.days.yearsDisplay.style.display = "none";
+      els.days.togetherDetails.style.display = "block";
+      updateTogetherPage(); // Update the detailed breakdown
+    }
+  }, 3000);
+}
+
 function updateTogetherPage() {
   if (!els.days.daysCount || !els.days.weeksCount || !els.days.hoursCount || !els.days.breakdown) {
     return;
+  }
+
+  // Keep confetti alive if the anniversary window is active and we're already on the page
+  if (els.pages.days && els.pages.days.style.display !== "none") {
+    startAnniversaryConfetti();
   }
 
   const now = new Date();
@@ -918,6 +764,63 @@ function updateTogetherPage() {
 }
 
 /* =========================================================
+   ANNIVERSARY CONFETTI (Nov 16 – Dec 16, 2025)
+========================================================= */
+function isAnniversaryWindow(now = new Date()) {
+  return now >= ANNIVERSARY_START && now < ANNIVERSARY_END;
+}
+
+function startAnniversaryConfetti() {
+  if (!isAnniversaryWindow()) {
+    stopAnniversaryConfetti();
+    return;
+  }
+
+  if (STATE.confettiIntervalId) return;
+
+  let container = document.getElementById("confetti-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "confetti-container";
+    document.body.appendChild(container);
+  }
+
+  STATE.confettiIntervalId = setInterval(() => {
+    for (let i = 0; i < 12; i += 1) {
+      container.appendChild(createConfettiPiece());
+    }
+  }, 400);
+}
+
+function stopAnniversaryConfetti() {
+  if (STATE.confettiIntervalId) {
+    clearInterval(STATE.confettiIntervalId);
+    STATE.confettiIntervalId = null;
+  }
+
+  const container = document.getElementById("confetti-container");
+  if (container) {
+    container.innerHTML = "";
+  }
+}
+
+function createConfettiPiece() {
+  const piece = document.createElement("div");
+  piece.className = "confetti-piece";
+  const colors = ["#e75480", "#ffb3c6", "#ffd166", "#7dd3fc", "#b5e48c"];
+  piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+  piece.style.left = `${Math.random() * 100}vw`;
+  piece.style.animationDuration = `${2.5 + Math.random() * 1.5}s`;
+  piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+  piece.addEventListener("animationend", () => {
+    piece.remove();
+  });
+
+  return piece;
+}
+
+/* =========================================================
    HELPER UTILITIES
 ========================================================= */
 // Returns a random index from 0..length-1.
@@ -937,10 +840,6 @@ function getDistinctRandomIndex(length, currentIndex) {
   return index;
 }
 
-// Normalises a hangman phrase by stripping non-letter characters and lowercasing it.
-function normaliseHangmanWord(word) {
-  return word.toLowerCase().replace(/[^a-z]/g, "");
-}
 
 function calculateCalendarBreakdown(startDate, endDate) {
   const start = new Date(startDate.getTime());
@@ -968,4 +867,136 @@ function addDays(date, numberOfDays) {
   const result = new Date(date.getTime());
   result.setDate(result.getDate() + numberOfDays);
   return result;
+}
+
+/* =========================================================
+   ANNIVERSARY LETTER PAGE
+========================================================= */
+function setupLetterPageInteractions() {
+  if (!els.letter.page) return;
+
+  const checkScrollPosition = () => {
+    const { scrollTop, clientHeight, scrollHeight } = els.letter.page;
+    const atBottom = scrollTop + clientHeight >= scrollHeight - 10;
+
+    if (atBottom && els.letter.nextButton) {
+      els.letter.nextButton.classList.add("show");
+    }
+  };
+
+  els.letter.page.addEventListener("scroll", checkScrollPosition);
+
+  if (els.letter.nextButton) {
+    els.letter.nextButton.addEventListener("click", () => {
+      triggerLetterNextButtonAnimation();
+      goToPage("album");
+    });
+  }
+
+  resetLetterNextButton();
+  checkScrollPosition();
+}
+
+function setupDaysPageInteractions() {
+  if (!els.days.nextButton) return;
+  els.days.nextButton.addEventListener("click", () => {
+    goToPage("letter");
+  });
+}
+
+function scheduleDaysNextButton() {
+  hideDaysNextButton();
+
+  STATE.daysNextButtonTimeoutId = setTimeout(() => {
+    if (els.days.nextButton) {
+      els.days.nextButton.classList.add("show");
+    }
+  }, 5000);
+}
+
+function hideDaysNextButton() {
+  if (STATE.daysNextButtonTimeoutId) {
+    clearTimeout(STATE.daysNextButtonTimeoutId);
+    STATE.daysNextButtonTimeoutId = null;
+  }
+
+  if (els.days.nextButton) {
+    els.days.nextButton.classList.remove("show");
+  }
+}
+
+function resetLetterNextButton() {
+  if (els.letter.nextButton) {
+    els.letter.nextButton.classList.remove("show");
+    els.letter.nextButton.classList.remove("is-animating");
+  }
+}
+
+function triggerLetterNextButtonAnimation() {
+  if (!els.letter.nextButton) return;
+  els.letter.nextButton.classList.remove("is-animating");
+  // Force reflow so the animation can restart
+  void els.letter.nextButton.offsetWidth;
+  els.letter.nextButton.classList.add("is-animating");
+}
+
+// Types out "Jannah," with typewriter effect, then shows the letter content
+function startLetterTypewriter() {
+  const letterTitle = document.getElementById("letter-title");
+  const letterContent = document.getElementById("letter-content");
+  
+  if (!letterTitle) return;
+
+  // Reset state
+  STATE.letterTypewriterIndex = 0;
+  letterTitle.textContent = "";
+  
+  // Hide content initially
+  if (letterContent) {
+    letterContent.style.display = "none";
+  }
+
+  const LETTER_TITLE_TEXT = "Jannah,";
+  
+  function typeLetterTitle() {
+    if (STATE.letterTypewriterIndex < LETTER_TITLE_TEXT.length) {
+      letterTitle.textContent += LETTER_TITLE_TEXT.charAt(STATE.letterTypewriterIndex);
+      STATE.letterTypewriterIndex += 1;
+      setTimeout(typeLetterTitle, 150);
+    } else {
+      // After typing is complete, show the letter content with fade-in
+      if (letterContent) {
+        letterContent.style.display = "block";
+        letterContent.style.opacity = "0";
+        letterContent.style.transition = "opacity 0.5s ease";
+        setTimeout(() => {
+          if (letterContent) {
+            letterContent.style.opacity = "1";
+          }
+        }, 50);
+      }
+    }
+  }
+  
+  typeLetterTitle();
+}
+
+// Updates the hours count in the letter
+function updateLetterHours() {
+  const letterHoursElement = document.getElementById("letter-hours");
+  if (!letterHoursElement) return;
+
+  const now = new Date();
+  const start = RELATIONSHIP_START;
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(RELATIONSHIP_REFERENCE_DATE.getTime())) {
+    letterHoursElement.textContent = "17,566";
+    return;
+  }
+
+  const diffFromReferenceMs = now.getTime() - RELATIONSHIP_REFERENCE_DATE.getTime();
+  const additionalHours = Math.floor(diffFromReferenceMs / MS_PER_HOUR);
+  const totalHours = RELATIONSHIP_REFERENCE_TOTAL_HOURS + additionalHours;
+
+  letterHoursElement.textContent = Math.max(totalHours, 17566).toLocaleString();
 }
