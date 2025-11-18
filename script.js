@@ -28,6 +28,7 @@ const MAIN_MESSAGE_ROTATION_MS = 5000; // Delay between love messages on the lan
 const ALBUM_MESSAGE_ROTATION_MS = 3000; // Delay between album caption changes
 const CLICK_BUTTON_DELAY_MS = 10000; // Matches the visual countdown animation
 const COUNTDOWN_DURATION_SECONDS = 10; // Mirrors CSS custom property --t
+const BACKGROUND_AUDIO_VOLUME = 0.6; // Default volume for the looping soundtrack
 const PASSWORD_HINT_IDS = ["hint1", "hint2", "hint3"]; // DOM ids for the progressive hints
 const ANNIVERSARY_START = new Date(2025, 10, 16); // Nov 16, 2025 (month is zero-based)
 const ANNIVERSARY_END = new Date(2025, 11, 16); // Dec 16, 2025
@@ -40,6 +41,7 @@ const LOVE_MESSAGES = [
   "I'll always choose you, in every lifetime 🤞🏼❤️",
   "You are my forever love 🤞🏼❤️"
 ];
+
 
 
 /* =========================================================
@@ -59,7 +61,9 @@ const STATE = {
   togetherIntervalId: null, // Interval that keeps the days-together counters in sync with real time
   mainInitialised: false, // Guards the main-page initialisation work so it only runs once
   confettiIntervalId: null, // Interval for anniversary confetti
-  daysNextButtonTimeoutId: null // Timeout to reveal the days page next button
+  daysNextButtonTimeoutId: null, // Timeout to reveal the days page next button
+  soundPromptDismissed: false, // Tracks whether the audio prompt was acknowledged
+  backgroundAudioStarted: false // Ensures the soundtrack is only primed once
 };
 
 /* =========================================================
@@ -78,6 +82,7 @@ const els = {
     main: document.getElementById("main-content"),
     album: document.getElementById("album-page"),
     days: document.getElementById("together-page"),
+    video: document.getElementById("video-page"),
     letter: document.getElementById("letter-page")
   },
 
@@ -119,6 +124,24 @@ const els = {
     nextButton: document.getElementById("letter-next-btn")
   },
 
+  // Video page
+  video: {
+    page: document.getElementById("video-page"),
+    player: document.getElementById("couple-video"),
+    overlay: document.getElementById("video-overlay"),
+    soundButton: document.getElementById("sound-btn"),
+    reminder: document.getElementById("sound-reminder"),
+    hint: document.getElementById("volume-hint"),
+    nowPlayingText: document.getElementById("now-playing-text"),
+    nowPlayingIndicator: document.getElementById("now-playing-indicator"),
+    nextButton: document.getElementById("video-letter-btn")
+  },
+
+  // Audio
+  audio: {
+    background: document.getElementById("background-audio")
+  },
+
   // Navigation menus and dropdowns (one set per page)
   navMenus: [
     {
@@ -135,9 +158,43 @@ const els = {
       trigger: document.getElementById("nav-menu-days"),
       hamburger: document.getElementById("hamburger-days"),
       dropdown: document.getElementById("nav-dropdown-days")
+    },
+    {
+      trigger: document.getElementById("nav-menu-video"),
+      hamburger: document.getElementById("hamburger-video"),
+      dropdown: document.getElementById("nav-dropdown-video")
+    },
+    {
+      trigger: document.getElementById("nav-menu-letter"),
+      hamburger: document.getElementById("hamburger-letter"),
+      dropdown: document.getElementById("nav-dropdown-letter")
     }
   ]
 };
+
+// Canonical list of nav links and their target pages (keeps order consistent across menus).
+const NAV_LINKS = [
+  { id: "nav-message", page: "days" },
+  { id: "nav-video", page: "video" },
+  { id: "nav-letter", page: "letter" },
+  { id: "nav-album", page: "album" },
+  { id: "nav-message-album", page: "days" },
+  { id: "nav-video-album", page: "video" },
+  { id: "nav-letter-album", page: "letter" },
+  { id: "nav-album-album", page: "album" },
+  { id: "nav-message-days", page: "days" },
+  { id: "nav-video-days", page: "video" },
+  { id: "nav-letter-days", page: "letter" },
+  { id: "nav-album-days", page: "album" },
+  { id: "nav-message-letter", page: "days" },
+  { id: "nav-video-letter", page: "video" },
+  { id: "nav-letter-letter", page: "letter" },
+  { id: "nav-album-letter", page: "album" },
+  { id: "nav-message-video", page: "days" },
+  { id: "nav-video-video", page: "video" },
+  { id: "nav-letter-video", page: "letter" },
+  { id: "nav-album-video", page: "album" }
+];
 
 /* =========================================================
    PAGE CONTROLLERS
@@ -174,6 +231,14 @@ const PAGES = {
       if (els.pages.days) els.pages.days.style.display = "none";
     }
   },
+  video: {
+    show: () => {
+      if (els.pages.video) els.pages.video.style.display = "flex";
+    },
+    hide: () => {
+      if (els.pages.video) els.pages.video.style.display = "none";
+    }
+  },
   letter: {
     show: () => {
       if (els.pages.letter) els.pages.letter.style.display = "flex";
@@ -194,14 +259,50 @@ window.onload = typeWriter; // Kick off the typewriter once the window fires “
    CORE INITIALISATION ROUTINE
 ========================================================= */
 function initializeApp() {
+  setupBackgroundAudio();
   setupPasswordGate();
   setupMainPageInteractions();
   setupAlbumInteractions();
   setupFullscreenViewer();
   setupDaysPageInteractions();
+  setupVideoPageInteractions();
   setupLetterPageInteractions();
   setupNavigation();
   startTogetherCounter(); // Begin tracking how long you've been together
+}
+
+/* =========================================================
+   BACKGROUND AUDIO
+========================================================= */
+function setupBackgroundAudio() {
+  if (!els.audio.background) return;
+
+  els.audio.background.loop = true;
+  els.audio.background.volume = BACKGROUND_AUDIO_VOLUME;
+}
+
+function startBackgroundAudio() {
+  if (!els.audio.background || STATE.backgroundAudioStarted) return;
+
+  STATE.backgroundAudioStarted = true;
+  resumeBackgroundAudio();
+}
+
+function resumeBackgroundAudio() {
+  if (!els.audio.background || !STATE.backgroundAudioStarted) return;
+
+  const playPromise = els.audio.background.play();
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(() => {
+      // Autoplay may be blocked; a later user interaction will retry.
+    });
+  }
+}
+
+function pauseBackgroundAudio() {
+  if (els.audio.background) {
+    els.audio.background.pause();
+  }
 }
 
 /* =========================================================
@@ -249,6 +350,7 @@ function unlockExperience() {
     els.password.overlay.style.display = "none";
   }
 
+  startBackgroundAudio();
   goToPage("days");
 }
 
@@ -444,24 +546,9 @@ function setupMenuToggles() {
   });
 }
 
-  // Connects every nav item to the destination page it should expose.
-  function setupNavigationLinks() {
-    const linkMap = [
-      { id: "nav-message", page: "days" },
-      { id: "nav-album", page: "album" },
-      { id: "nav-letter", page: "letter" },
-      { id: "nav-message-album", page: "days" },
-      { id: "nav-album-album", page: "album" },
-      { id: "nav-letter-album", page: "letter" },
-      { id: "nav-message-days", page: "days" },
-      { id: "nav-album-days", page: "album" },
-      { id: "nav-letter-days", page: "letter" },
-      { id: "nav-message-letter", page: "days" },
-      { id: "nav-album-letter", page: "album" },
-      { id: "nav-letter-letter", page: "letter" }
-    ];
-
-  linkMap.forEach((link) => {
+// Connects every nav item to the destination page it should expose.
+function setupNavigationLinks() {
+  NAV_LINKS.forEach((link) => {
     const element = document.getElementById(link.id);
     if (!element) return;
 
@@ -505,6 +592,20 @@ function closeAllMenus() {
   els.navMenus.forEach(closeMenu);
 }
 
+// Highlights the nav item that matches the current page.
+function setActiveNavItems(pageKey) {
+  NAV_LINKS.forEach((link) => {
+    const element = document.getElementById(link.id);
+    if (!element) return;
+
+    if (link.page === pageKey) {
+      element.classList.add("active");
+    } else {
+      element.classList.remove("active");
+    }
+  });
+}
+
 // Central function for switching between “pages”.
 function goToPage(pageKey) {
   Object.entries(PAGES).forEach(([key, controller]) => {
@@ -514,6 +615,8 @@ function goToPage(pageKey) {
       controller.hide();
     }
   });
+
+  setActiveNavItems(pageKey);
 
   // Handle page-specific side-effects.
   if (pageKey !== "album") {
@@ -527,6 +630,14 @@ function goToPage(pageKey) {
   } else {
     stopAnniversaryConfetti();
     hideDaysNextButton();
+  }
+
+  if (pageKey === "video") {
+    pauseBackgroundAudio();
+    prepareVideoExperience();
+  } else {
+    resumeBackgroundAudio();
+    pauseVideo();
   }
 
   if (pageKey === "letter") {
@@ -900,7 +1011,7 @@ function setupLetterPageInteractions() {
 function setupDaysPageInteractions() {
   if (!els.days.nextButton) return;
   els.days.nextButton.addEventListener("click", () => {
-    goToPage("letter");
+    goToPage("video");
   });
 }
 
@@ -922,6 +1033,150 @@ function hideDaysNextButton() {
 
   if (els.days.nextButton) {
     els.days.nextButton.classList.remove("show");
+  }
+}
+
+/* =========================================================
+   VIDEO PAGE
+========================================================= */
+function setupVideoPageInteractions() {
+  if (els.video.soundButton) {
+    els.video.soundButton.addEventListener("click", enableVideoSoundAndPlay);
+  }
+
+  if (els.video.overlay) {
+    els.video.overlay.addEventListener("click", enableVideoSoundAndPlay);
+  }
+
+  if (els.video.player) {
+    els.video.player.addEventListener("volumechange", evaluateAudioStateForVideo);
+    els.video.player.addEventListener("play", evaluateAudioStateForVideo);
+    els.video.player.addEventListener("play", updateNowPlayingDisplay);
+    els.video.player.addEventListener("pause", updateNowPlayingDisplay);
+    els.video.player.addEventListener("ended", updateNowPlayingDisplay);
+    els.video.player.addEventListener("timeupdate", updateNowPlayingDisplay);
+    els.video.player.addEventListener("ended", showVideoNextButton);
+  }
+
+  if (els.video.nextButton) {
+    els.video.nextButton.addEventListener("click", () => {
+      goToPage("letter");
+    });
+  }
+}
+
+function prepareVideoExperience() {
+  if (!els.video.player) return;
+
+  els.video.player.currentTime = 0;
+  els.video.player.volume = 1;
+  els.video.player.muted = false;
+  hideVideoNextButton();
+
+  els.video.player.play()
+    .then(() => {
+      evaluateAudioStateForVideo();
+      updateNowPlayingDisplay();
+    })
+    .catch(() => {
+      // Browser blocked autoplay with sound; fallback to muted play and prompt user.
+      els.video.player.muted = true;
+      els.video.player.play().finally(() => {
+        STATE.soundPromptDismissed = false;
+        evaluateAudioStateForVideo();
+        updateNowPlayingDisplay();
+      });
+    });
+}
+
+function pauseVideo() {
+  if (els.video.player) {
+    els.video.player.pause();
+    els.video.player.currentTime = 0;
+  }
+
+  if (els.video.overlay) {
+    els.video.overlay.classList.remove("show");
+  }
+}
+
+function enableVideoSoundAndPlay() {
+  STATE.soundPromptDismissed = true;
+  if (!els.video.player) return;
+
+  els.video.player.muted = false;
+  els.video.player.volume = 1;
+  els.video.player.currentTime = 0;
+  els.video.player.play().finally(() => {
+    evaluateAudioStateForVideo();
+    updateNowPlayingDisplay();
+    hideVideoNextButton();
+  });
+}
+
+function showVideoOverlay() {
+  if (!els.video.overlay) return;
+
+  const needsOverlay = !isVideoAudioLive() || !STATE.soundPromptDismissed;
+  if (needsOverlay) {
+    els.video.overlay.classList.add("show");
+  } else {
+    els.video.overlay.classList.remove("show");
+  }
+}
+
+function updateSoundReminder() {
+  if (!els.video.reminder) return;
+  els.video.reminder.textContent = isVideoAudioLive()
+    ? "Audio on — feel everything ❤️"
+    : "Sound is low — tap to boost 🔊";
+}
+
+function updateVolumeHint() {
+  if (!els.video.hint) return;
+  if (isVideoAudioLive()) {
+    els.video.hint.classList.remove("show");
+  } else {
+    els.video.hint.classList.add("show");
+  }
+}
+
+function evaluateAudioStateForVideo() {
+  showVideoOverlay();
+  updateSoundReminder();
+  updateVolumeHint();
+  updateNowPlayingDisplay();
+}
+
+function isVideoAudioLive() {
+  if (!els.video.player) return false;
+  return !els.video.player.muted && els.video.player.volume >= 0.6;
+}
+
+function updateNowPlayingDisplay() {
+  if (!els.video.player || !els.video.nowPlayingText || !els.video.nowPlayingIndicator) return;
+
+  const isPlaying = !els.video.player.paused && !els.video.player.ended;
+  els.video.nowPlayingText.textContent = isPlaying ? "Now Playing" : "Unpause";
+
+  if (isPlaying) {
+    els.video.nowPlayingIndicator.classList.remove("is-paused");
+    els.video.nowPlayingText.classList.remove("status-paused");
+  } else {
+    els.video.nowPlayingIndicator.classList.add("is-paused");
+    els.video.nowPlayingText.classList.add("status-paused");
+  }
+}
+
+function showVideoNextButton() {
+  if (els.video.nextButton) {
+    els.video.nextButton.classList.add("show");
+  }
+}
+
+function hideVideoNextButton() {
+  if (els.video.nextButton) {
+    els.video.nextButton.classList.remove("show");
   }
 }
 

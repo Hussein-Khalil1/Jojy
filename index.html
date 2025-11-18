@@ -10,6 +10,9 @@
 
 <body>
 
+  <!-- BACKGROUND MUSIC -->
+  <audio id="background-audio" src="S1.mp3" loop preload="auto" aria-hidden="true"></audio>
+
   <!-- PASSWORD SCREEN -->
   <div id="password-overlay">
     <h2 id="password-title"></h2>
@@ -30,8 +33,9 @@
       </div>
       <div class="nav-dropdown" id="nav-dropdown">
         <div class="nav-item" id="nav-message">Our Days</div>
-        <div class="nav-item" id="nav-album">Our Memories</div>
+        <div class="nav-item" id="nav-video">Our Video</div>
         <div class="nav-item" id="nav-letter">A Letter to You</div>
+        <div class="nav-item" id="nav-album">Our Memories</div>
       </div>
     </div>
     
@@ -58,8 +62,9 @@
       </div>
       <div class="nav-dropdown" id="nav-dropdown-album">
         <div class="nav-item" id="nav-message-album">Our Days</div>
-        <div class="nav-item" id="nav-album-album">Photo Album</div>
+        <div class="nav-item" id="nav-video-album">Our Video</div>
         <div class="nav-item" id="nav-letter-album">A Letter to You</div>
+        <div class="nav-item" id="nav-album-album">Our Memories</div>
       </div>
     </div>
     
@@ -102,8 +107,9 @@
       </div>
       <div class="nav-dropdown" id="nav-dropdown-days">
         <div class="nav-item" id="nav-message-days">Our Days</div>
-        <div class="nav-item" id="nav-album-days">Our Memories</div>
+        <div class="nav-item" id="nav-video-days">Our Video</div>
         <div class="nav-item" id="nav-letter-days">A Letter to You</div>
+        <div class="nav-item" id="nav-album-days">Our Memories</div>
       </div>
     </div>
 
@@ -137,9 +143,72 @@
       </div>
     </div>
 
-    <button id="days-next-btn" class="next-button" type="button" aria-label="Go to the letter">
-      Next: A Letter to You
+    <button id="days-next-btn" class="next-button" type="button" aria-label="Go to our video">
+      Next: Our Video
     </button>
+  </div>
+
+  <!-- VIDEO PAGE -->
+  <div id="video-page">
+    <!-- NAVIGATION MENU -->
+    <div class="nav-menu" id="nav-menu-video">
+      <div class="hamburger" id="hamburger-video">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="nav-dropdown" id="nav-dropdown-video">
+        <div class="nav-item" id="nav-message-video">Our Days</div>
+        <div class="nav-item" id="nav-video-video">Our Video</div>
+        <div class="nav-item" id="nav-letter-video">A Letter to You</div>
+        <div class="nav-item" id="nav-album-video">Our Memories</div>
+      </div>
+    </div>
+
+    <div class="video-content">
+      <div class="video-lede">
+        <p class="video-chip">Tap play + sound on 🎧</p>
+        <h1>Press play on <span>us</span></h1>
+        <p class="video-subtitle">
+          2 Years of us in 30 seconds 🤞🏼❤️
+        </p>
+        <div class="video-moments">
+          <div class="moment-bubble">Falling in love, Again & Again</div>
+          <div class="moment-bubble">Our Love in A Video</div>
+          <div class="moment-bubble">A hug that says everything</div>
+        </div>
+        <button id="video-letter-btn" class="next-button video-next-btn" type="button">
+          Next: The Letter
+        </button>
+      </div>
+
+      <div class="video-stage">
+        <div class="video-glow"></div>
+        <div class="video-card">
+          <div class="video-header">
+            <span class="pulse-dot" id="now-playing-indicator"></span>
+            <span id="now-playing-text">Now Playing</span>
+            <div class="sound-reminder" id="sound-reminder">Sound on for the magic ✨</div>
+          </div>
+          <div class="volume-hint" id="volume-hint">Raise your volume like Spotify 🔊</div>
+          <div class="video-frame">
+            <video id="couple-video" src="V1.MOV" playsinline muted preload="metadata" controls></video>
+            <div class="video-overlay" id="video-overlay">
+              <div class="overlay-inner">
+                <p>Ready? Let's watch with sound. Tap to unmute + turn it up.</p>
+                <button id="sound-btn" type="button">Boost Volume &amp; Play</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="video-sparkles">
+          <span>🤞🏼</span>
+          <span>❤️</span>
+          <span>🎞️</span>
+          <span>💕</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ANNIVERSARY LETTER PAGE -->
@@ -153,8 +222,9 @@
       </div>
       <div class="nav-dropdown" id="nav-dropdown-letter">
         <div class="nav-item" id="nav-message-letter">Our Days</div>
-        <div class="nav-item" id="nav-album-letter">Our Memories</div>
+        <div class="nav-item" id="nav-video-letter">Our Video</div>
         <div class="nav-item" id="nav-letter-letter">A Letter to You</div>
+        <div class="nav-item" id="nav-album-letter">Our Memories</div>
       </div>
     </div>
 
@@ -174,13 +244,13 @@
           I love you so much Jannah. Like, so much it's crazy.
         </p>
 
-        <p>
+        <!-- <p>
           But I need to be honest with you. When you called me that name... I never expected that from you. I never thought you'd talk to me like that. It hurt. Like, a different kind of hurt that I didn't even know existed. This isn't me being egoful or anything it's just that it really hurt coming from you.
         </p>
 
         <p>
           I know we'll get through this. I believe in us and everything we've built. But we just need some time. we need time to reflect and heal. We just need this break to figure out what we want and what we need. So we can return stronger and better than before, Bas begad this time.
-        </p>
+        </p> -->
 
         <p class="letter-ending">
           Happy 2 years Jannah. These have been the best 2 years of my life. To many more years and years to come inshallah🤞🏼❤️
