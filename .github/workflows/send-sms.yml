@@ -1,0 +1,20 @@
+name: Send SMS on website update
+
+on:
+  push:
+    branches:
+      - main  # change to master if your repo uses master
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send SMS via Twilio
+        run: |
+          curl "https://api.twilio.com/2010-04-01/Accounts/${{ secrets.TWILIO_ACCOUNT_SID }}/Messages.json" \
+            -X POST \
+            --data-urlencode "MessagingServiceSid=${{ secrets.TWILIO_MESSAGING_SERVICE_SID }}" \
+            --data-urlencode "To=${{ secrets.SMS_TO_NUMBER }}" \
+            --data-urlencode "Body=Surpriseeeee Jojyyyyy!!!!!!! Your website has been updated! https://hussein-khalil1.github.io/Jojy_website/" \
+            -u "${{ secrets.TWILIO_ACCOUNT_SID }}:${{ secrets.TWILIO_AUTH_TOKEN }}"
